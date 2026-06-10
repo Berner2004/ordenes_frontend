@@ -10,26 +10,24 @@ export default function Login() {
 
     const handleLogin = async (e) => {
         e.preventDefault();
-        setError(''); // Limpiamos errores previos al intentar de nuevo
+        setError(''); 
         
         try {
-            // El api.js automáticamente le agregará el "https://tu-url.onrender.com/api" al inicio
-            const response = await api.post('/auth/login', { email, password });
+            // ¡AQUÍ ESTÁ LA SOLUCIÓN! Le damos la URL completa y estricta
+            const response = await api.post('https://ordenes-backend-cy57.onrender.com/api/auth/login', { email, password });
             
-            // Guardamos las credenciales en la memoria del navegador
             localStorage.setItem('token', response.data.token);
             localStorage.setItem('usuario', JSON.stringify(response.data));
-            localStorage.setItem('rol', response.data.rol); // Añadido: Vital para el menú lateral
+            localStorage.setItem('rol', response.data.rol);
 
-            // Redirección inteligente según el rol
             if (response.data.rol === 'TALLER') {
                 navigate('/taller');
             } else {
                 navigate('/dashboard');
             }
         } catch (err) {
-            console.error("Detalle del error:", err); // Te ayudará a ver el problema exacto en F12
-            setError(err.response?.data?.error || 'Error al conectar con el servidor. Verifica tus credenciales.');
+            console.error("Detalle del error:", err);
+            setError(err.response?.data?.error || 'Error al conectar con el servidor.');
         }
     };
 

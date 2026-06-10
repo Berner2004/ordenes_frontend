@@ -3,6 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import { FileText, Plus, Trash2, CheckCircle, AlertTriangle, Camera, Receipt, X } from 'lucide-react';
 import api from '../services/api';
 
+// Función helper para construir URLs de imágenes
+const getImageUrl = (fotoPath) => {
+    if (!fotoPath) return '';
+    if (fotoPath.startsWith('http://') || fotoPath.startsWith('https://')) {
+        return fotoPath;
+    }
+    return `https://ordenes-backend-cy57.onrender.com${fotoPath}`;
+};
+
 export default function Ordenes() {
     const navigate = useNavigate();
     const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
@@ -230,12 +239,27 @@ export default function Ordenes() {
                                             <p className="font-bold text-gray-800 uppercase">{ordenVisualizar.tipo_trabajo}</p>
                                         </div>
                                     </div>
-                                    {ordenVisualizar.foto_ingreso && (
+
+                                    {/* ========================================== */}
+                                    {/* 📸 GALERÍA DE FOTOS DE INGRESO (RECEPCIÓN) */}
+                                    {/* ========================================== */}
+                                    {(ordenVisualizar.fotos_ingreso?.length > 0 || ordenVisualizar.foto_ingreso) && (
                                         <div>
-                                            <p className="text-xs font-bold text-gray-400 mb-2">EVIDENCIA DE INGRESO:</p>
-                                            <a href={ordenVisualizar.foto_ingreso} target="_blank" rel="noreferrer">
-                                                <img src={ordenVisualizar.foto_ingreso} alt="Ingreso" className="w-32 h-32 object-cover rounded border-2 border-blue-200 p-1 bg-white hover:opacity-80 transition" title="Clic para ampliar" />
-                                            </a>
+                                            <p className="text-xs font-bold text-gray-400 mb-3">EVIDENCIA FOTOGRÁFICA DE INGRESO</p>
+                                            <div className="grid grid-cols-3 md:grid-cols-4 gap-3">
+                                                {/* Sistema Nuevo: Múltiples Fotos */}
+                                                {ordenVisualizar.fotos_ingreso && ordenVisualizar.fotos_ingreso.map((foto, idx) => (
+                                                    <a key={idx} href={getImageUrl(foto)} target="_blank" rel="noreferrer">
+                                                        <img src={getImageUrl(foto)} alt={`Ingreso ${idx + 1}`} className="w-full h-24 object-cover rounded border-2 border-blue-300 hover:opacity-80 transition shadow-sm" />
+                                                    </a>
+                                                ))}
+                                                {/* Sistema Antiguo: Por si abren una orden vieja de 1 sola foto */}
+                                                {ordenVisualizar.foto_ingreso && (
+                                                    <a href={getImageUrl(ordenVisualizar.foto_ingreso)} target="_blank" rel="noreferrer">
+                                                        <img src={getImageUrl(ordenVisualizar.foto_ingreso)} alt="Ingreso" className="w-full h-24 object-cover rounded border-2 border-blue-300 hover:opacity-80 transition shadow-sm" />
+                                                    </a>
+                                                )}
+                                            </div>
                                         </div>
                                     )}
                                 </div>
@@ -310,13 +334,31 @@ export default function Ordenes() {
                                     <p className="font-black text-gray-800 uppercase">{ordenVisualizar.tecnico_responsable || 'SIN ASIGNAR'}</p>
                                 </div>
                                 <div className="bg-white p-5 rounded-lg border border-green-100 shadow-sm">
-                                    <p className="text-xs font-bold text-gray-400 mb-2">EVIDENCIA DE EQUIPO FINALIZADO:</p>
-                                    {ordenVisualizar.foto_salida ? (
-                                        <a href={ordenVisualizar.foto_salida} target="_blank" rel="noreferrer">
-                                            <img src={ordenVisualizar.foto_salida} alt="Salida" className="w-48 h-48 object-cover rounded border-2 border-green-300 p-1 hover:opacity-80 transition" title="Clic para ampliar" />
-                                        </a>
+                                    {/* ========================================== */}
+                                    {/* 📸 GALERÍA DE FOTOS DE SALIDA (TALLER) */}
+                                    {/* ========================================== */}
+                                    {(ordenVisualizar.fotos_salida?.length > 0 || ordenVisualizar.foto_salida) ? (
+                                        <div>
+                                            <p className="text-xs font-bold text-gray-400 mb-3">EVIDENCIA FOTOGRÁFICA DE SALIDA</p>
+                                            <div className="grid grid-cols-3 md:grid-cols-4 gap-3">
+                                                {/* Sistema Nuevo: Múltiples Fotos */}
+                                                {ordenVisualizar.fotos_salida && ordenVisualizar.fotos_salida.map((foto, idx) => (
+                                                    <a key={idx} href={getImageUrl(foto)} target="_blank" rel="noreferrer">
+                                                        <img src={getImageUrl(foto)} alt={`Salida ${idx + 1}`} className="w-full h-24 object-cover rounded border-2 border-green-300 hover:opacity-80 transition shadow-sm" />
+                                                    </a>
+                                                ))}
+                                                {/* Sistema Antiguo: Por si abren una orden vieja de 1 sola foto */}
+                                                {ordenVisualizar.foto_salida && (
+                                                    <a href={getImageUrl(ordenVisualizar.foto_salida)} target="_blank" rel="noreferrer">
+                                                        <img src={getImageUrl(ordenVisualizar.foto_salida)} alt="Salida" className="w-full h-24 object-cover rounded border-2 border-green-300 hover:opacity-80 transition shadow-sm" />
+                                                    </a>
+                                                )}
+                                            </div>
+                                        </div>
                                     ) : (
-                                        <p className="text-gray-400 italic text-sm">No se adjuntó foto de salida.</p>
+                                        <div>
+                                            <p className="text-gray-400 italic text-sm">No se adjuntaron fotos de salida.</p>
+                                        </div>
                                     )}
                                 </div>
                             </div>

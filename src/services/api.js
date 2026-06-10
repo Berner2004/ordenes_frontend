@@ -2,7 +2,7 @@ import axios from 'axios';
 
 const api = axios.create({
     // Copia y pega esta línea exactamente así:
-    baseURL: 'https://ordenes-backend-cy57.onrender.com/api'
+    baseURL: 'https://ordenes-backend-cy57.onrender.com'
 });
 
 api.interceptors.request.use((config) => {

@@ -10,18 +10,26 @@ export default function Login() {
 
     const handleLogin = async (e) => {
         e.preventDefault();
+        setError(''); // Limpiamos errores previos al intentar de nuevo
+        
         try {
+            // El api.js automáticamente le agregará el "https://tu-url.onrender.com/api" al inicio
             const response = await api.post('/auth/login', { email, password });
+            
+            // Guardamos las credenciales en la memoria del navegador
             localStorage.setItem('token', response.data.token);
             localStorage.setItem('usuario', JSON.stringify(response.data));
+            localStorage.setItem('rol', response.data.rol); // Añadido: Vital para el menú lateral
 
+            // Redirección inteligente según el rol
             if (response.data.rol === 'TALLER') {
                 navigate('/taller');
             } else {
                 navigate('/dashboard');
             }
         } catch (err) {
-            setError(err.response?.data?.error || 'Error al iniciar sesión');
+            console.error("Detalle del error:", err); // Te ayudará a ver el problema exacto en F12
+            setError(err.response?.data?.error || 'Error al conectar con el servidor. Verifica tus credenciales.');
         }
     };
 
@@ -31,20 +39,20 @@ export default function Login() {
                 
                 {/* Contenedor del Logo */}
                 <div className="flex justify-center mb-6">
-                    {/* Reemplaza la ruta del src con la ubicación de tu logo. Ej: src="/hidratec-logo.png" si lo pones en la carpeta public */}
                     <img 
                         src="/hidratec-logo.png" 
                         alt="Logo HIDRATEC" 
                         className="h-20 object-contain"
-                        onError={(e) => { e.target.src = 'https://via.placeholder.com/150x60?text=HIDRATEC'; }} // Placeholder por si falla la ruta
+                        onError={(e) => { e.target.src = 'https://via.placeholder.com/150x60?text=HIDRATEC'; }} 
                     />
                 </div>
                 
                 <h2 className="text-2xl font-black text-center text-hidratec-dark mb-1">ACCESO AL SISTEMA</h2>
                 <p className="text-center text-gray-500 mb-8 text-sm font-medium tracking-wide">ÓRDENES DE TRABAJO</p>
 
+                {/* Alerta de Error */}
                 {error && (
-                    <div className="bg-red-50 border-l-4 border-hidratec-secondary text-red-700 p-4 mb-6 rounded shadow-sm text-sm">
+                    <div className="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded shadow-sm text-sm">
                         <p className="font-bold">Error de acceso</p>
                         <p>{error}</p>
                     </div>
@@ -55,7 +63,7 @@ export default function Login() {
                         <label className="block text-hidratec-dark text-sm font-bold mb-2">Correo Electrónico</label>
                         <input 
                             type="email" 
-                            className="w-full px-4 py-3 border border-hidratec-border rounded-lg focus:outline-none focus:ring-2 focus:ring-hidratec-primary focus:border-transparent transition-all"
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-hidratec-primary focus:border-transparent transition-all"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             placeholder="usuario@hidratec.com"
@@ -66,7 +74,7 @@ export default function Login() {
                         <label className="block text-hidratec-dark text-sm font-bold mb-2">Contraseña</label>
                         <input 
                             type="password" 
-                            className="w-full px-4 py-3 border border-hidratec-border rounded-lg focus:outline-none focus:ring-2 focus:ring-hidratec-primary focus:border-transparent transition-all"
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-hidratec-primary focus:border-transparent transition-all"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             placeholder="••••••••"
@@ -75,7 +83,7 @@ export default function Login() {
                     </div>
                     <button 
                         type="submit" 
-                        className="w-full bg-hidratec-primary text-white font-bold py-3 px-4 rounded-lg hover:bg-opacity-90 transition duration-300 shadow-md mt-4"
+                        className="w-full bg-hidratec-primary text-hidratec-dark font-black py-3 px-4 rounded-lg hover:bg-yellow-500 transition duration-300 shadow-md mt-4 uppercase"
                     >
                         Ingresar
                     </button>

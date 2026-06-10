@@ -14,7 +14,7 @@ export default function Login() {
         
         try {
             // ¡AQUÍ ESTÁ LA SOLUCIÓN! Le damos la URL completa y estricta
-            const response = await api.post('https://ordenes-backend-cy57.onrender.com/api/auth/login', { email, password });
+            const response = await api.post('https://ordenes-backend-cy57.onrender.com/api/auth/login', { correo: email, password });
             
             localStorage.setItem('token', response.data.token);
             localStorage.setItem('usuario', JSON.stringify(response.data));

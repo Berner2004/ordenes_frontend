@@ -1,17 +1,18 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import Login from './pages/Login';
+
+// Importaciones de Pantallas y Componentes
+// ⚠️ IMPORTANTE: Asegúrate de que el archivo físico en tu carpeta se llame "Login.jsx" (con L mayúscula)
+import Login from './pages/login';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import Usuarios from './pages/Usuarios';
 import Categorias from './pages/Categorias';
-// ... más abajo en tus rutas:
-
-// Importamos las pantallas reales
 import Ordenes from './pages/Ordenes';
 import NuevaOrden from './pages/NuevaOrden';
 import Clientes from './pages/Clientes';
 import Taller from './pages/Taller';
 
+// Middleware de protección de rutas en el Frontend
 const RutaProtegida = ({ children }) => {
   const token = localStorage.getItem('token');
   if (!token) return <Navigate to="/login" replace />;
@@ -22,13 +23,12 @@ function App() {
   return (
     <Router>
       <Routes>
+        {/* Rutas Públicas */}
         <Route path="/" element={<Navigate to="/login" />} />
         <Route path="/login" element={<Login />} />
 
-        
+        {/* Rutas Privadas (Protegidas por Layout y Token) */}
         <Route element={<RutaProtegida><Layout /></RutaProtegida>}>
-        
-          {/* Rutas reales de la aplicación */}
           <Route path="/ordenes" element={<Ordenes />} />
           <Route path="/ordenes/nueva" element={<NuevaOrden />} />
           <Route path="/clientes" element={<Clientes />} />
@@ -42,5 +42,4 @@ function App() {
   );
 }
 
-// ¡ESTA ES LA LÍNEA QUE TE FALTABA PARA QUE REACT NO SE QUEJE!
 export default App;

@@ -22,7 +22,8 @@ export default function NuevaOrden() {
         tecnico_responsable: '', personal_extra: '', trabajo_remoto: 'NO',
         tipo_trabajo: '',
         actividad_realizar: '',
-        numero_cotizacion: ''
+        numero_cotizacion: '',
+        numero_orden: '' // Número de orden calculado dinámicamente
     });
 
     const mostrarAlerta = (mensaje, tipo = 'exito') => {
@@ -33,20 +34,31 @@ export default function NuevaOrden() {
     useEffect(() => {
         const cargarDatosInciales = async () => {
             try {
-                // Cargamos clientes, categorías y técnicos al mismo tiempo
-                const [resClientes, resCategorias, resTecnicos] = await Promise.all([
+                // Cargamos clientes, categorías, técnicos y el próximo número de orden al mismo tiempo
+                const [resClientes, resCategorias, resTecnicos, resNumero] = await Promise.all([
                     api.get('/clientes'),
                     api.get('/categorias'),
-                    api.get('/usuarios/tecnicos')
+                    api.get('/usuarios/tecnicos'),
+                    api.get('/ordenes/proximo-numero')
                 ]);
                 
                 setClientes(resClientes.data);
                 setCategoriasBD(resCategorias.data);
                 setTecnicosBD(resTecnicos.data);
 
-                // Si hay categorías, seleccionamos la primera por defecto
+                // Si hay categorías, seleccionamos la primera por defecto y cargamos el número de orden
                 if (resCategorias.data.length > 0) {
-                    setFormulario(prev => ({ ...prev, tipo_trabajo: resCategorias.data[0].nombre }));
+                    setFormulario(prev => ({
+                        ...prev,
+                        tipo_trabajo: resCategorias.data[0].nombre,
+                        numero_orden: resNumero.data.proximoNumero.toString()
+                    }));
+                } else {
+                    // Si no hay categorías pero hay número, al menos cargamos el número
+                    setFormulario(prev => ({
+                        ...prev,
+                        numero_orden: resNumero.data.proximoNumero.toString()
+                    }));
                 }
             } catch (error) { console.error('Error:', error); }
         };
@@ -165,6 +177,10 @@ export default function NuevaOrden() {
                                 </select>
                             </div>
                             <div>
+                                <label className="block text-xs font-bold text-gray-700 mb-1">Nº DE ORDEN DE TRABAJO (EDITABLE)</label>
+                                <input type="text" name="numero_orden" value={formulario.numero_orden} onChange={handleChange} className="w-full p-2 border-2 border-hidratec-primary rounded uppercase font-black text-lg text-hidratec-dark bg-hidratec-primary bg-opacity-10 focus:ring-2 focus:ring-hidratec-primary" placeholder="Calculando..." />
+                            </div>
+                            <div>
                                 <label className="block text-xs font-bold text-gray-700 mb-1">Nº DE COTIZACIÓN ASOCIADA (OPCIONAL)</label>
                                 <input type="text" name="numero_cotizacion" value={formulario.numero_cotizacion} onChange={handleChange} className="w-full p-2 border rounded uppercase font-mono text-sm" placeholder="Ej. COT-2025-001" />
                             </div>
@@ -227,6 +243,11 @@ export default function NuevaOrden() {
                                 <p className="text-xs mt-2 text-gray-400">Soporta cámara de celular o PC</p>
                             </div>
                         )}
+                    </div>
+
+                    <div className="bg-blue-50 border-l-4 border-blue-400 p-3 rounded text-xs text-gray-600">
+                        <p className="font-semibold text-blue-700 mb-1">💡 Tip: Número de orden</p>
+                        <p>El sistema sugiere el número correlativo, pero puedes hacer clic y cambiarlo si es necesario.</p>
                     </div>
 
                     <button type="submit" className="w-full bg-hidratec-dark text-white font-black py-4 rounded-lg shadow-lg hover:bg-black transition flex items-center justify-center gap-3 text-lg">

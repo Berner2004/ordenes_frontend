@@ -1,10 +1,10 @@
 import axios from 'axios';
 
 const api = axios.create({
-    baseURL: 'https://ordenes-backend-cy57.onrender.com', // Cambia esto por la URL de tu backend
+    // Copia y pega esta línea exactamente así:
+    baseURL: 'https://ordenes-backend-cy57.onrender.com/api'
 });
 
-// Interceptor: Antes de cada petición, revisa si hay un token y lo adjunta
 api.interceptors.request.use((config) => {
     const token = localStorage.getItem('token');
     if (token) {

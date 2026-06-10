@@ -12,18 +12,16 @@ export default function NuevaOrden() {
     const [tecnicosBD, setTecnicosBD] = useState([]);
     const [mostrarModal, setMostrarModal] = useState(false);
     
-    const [fotoPreview, setFotoPreview] = useState(null);
-    const [fotoArchivo, setFotoArchivo] = useState(null);
+    // Estados para las múltiples imágenes
+    const [archivosIngreso, setArchivosIngreso] = useState([]);
+    const [previews, setPreviews] = useState([]);
 
     const [nuevoCliente, setNuevoCliente] = useState({ nombre: '', ruc: '', direccion: '', telefono: '', correo: '' });
     
     const [formulario, setFormulario] = useState({
         cliente: '', ubicacion: '', responsable_cliente: '', cargo_cliente: '',
         tecnico_responsable: '', personal_extra: '', trabajo_remoto: 'NO',
-        tipo_trabajo: '',
-        actividad_realizar: '',
-        numero_cotizacion: '',
-        numero_orden: '' // Número de orden calculado dinámicamente
+        tipo_trabajo: '', actividad_realizar: '', numero_cotizacion: '', numero_orden: ''
     });
 
     const mostrarAlerta = (mensaje, tipo = 'exito') => {
@@ -34,7 +32,6 @@ export default function NuevaOrden() {
     useEffect(() => {
         const cargarDatosInciales = async () => {
             try {
-                // Cargamos clientes, categorías, técnicos y el próximo número de orden al mismo tiempo
                 const [resClientes, resCategorias, resTecnicos, resNumero] = await Promise.all([
                     api.get('/clientes'),
                     api.get('/categorias'),
@@ -46,7 +43,6 @@ export default function NuevaOrden() {
                 setCategoriasBD(resCategorias.data);
                 setTecnicosBD(resTecnicos.data);
 
-                // Si hay categorías, seleccionamos la primera por defecto y cargamos el número de orden
                 if (resCategorias.data.length > 0) {
                     setFormulario(prev => ({
                         ...prev,
@@ -54,7 +50,6 @@ export default function NuevaOrden() {
                         numero_orden: resNumero.data.proximoNumero.toString()
                     }));
                 } else {
-                    // Si no hay categorías pero hay número, al menos cargamos el número
                     setFormulario(prev => ({
                         ...prev,
                         numero_orden: resNumero.data.proximoNumero.toString()
@@ -81,13 +76,22 @@ export default function NuevaOrden() {
         });
     };
 
-    // Manejar la selección de imagen
-    const handleCapturarFoto = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            setFotoArchivo(file);
-            setFotoPreview(URL.createObjectURL(file)); // Crea un enlace temporal para ver la foto en pantalla
+    // Función que captura múltiples fotos y genera sus previsualizaciones
+    const handleCapturarFotos = (e) => {
+        const files = e.target.files;
+        if (files && files.length > 0) {
+            const nuevosArchivos = Array.from(files);
+            setArchivosIngreso([...archivosIngreso, ...nuevosArchivos]);
+            
+            const nuevosPreviews = nuevosArchivos.map(file => URL.createObjectURL(file));
+            setPreviews([...previews, ...nuevosPreviews]);
         }
+    };
+
+    // Eliminar una foto específica de la lista
+    const eliminarFoto = (index) => {
+        setArchivosIngreso(archivosIngreso.filter((_, i) => i !== index));
+        setPreviews(previews.filter((_, i) => i !== index));
     };
 
     const handleCrearCliente = async (e) => {
@@ -106,21 +110,18 @@ export default function NuevaOrden() {
         if (!formulario.cliente) return mostrarAlerta('Selecciona un cliente del directorio', 'error');
 
         try {
-            // Como enviamos una imagen, ya no podemos usar un JSON normal, debemos usar un FormData (paquete de archivos)
             const formData = new FormData();
             
-            // Metemos todos los campos de texto al paquete
             Object.keys(formulario).forEach(key => {
                 formData.append(key, formulario[key]);
             });
-            formData.append('numero_cotizacion', formulario.numero_cotizacion);
 
-            // Metemos la foto al paquete si existe
-            if (fotoArchivo) {
-                formData.append('foto', fotoArchivo);
+            if (archivosIngreso && archivosIngreso.length > 0) {
+                for (let i = 0; i < archivosIngreso.length; i++) {
+                    formData.append('fotos_ingreso', archivosIngreso[i]);
+                }
             }
 
-            // Enviamos todo configurando el encabezado para contenido "multipart"
             await api.post('/ordenes', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
@@ -153,7 +154,6 @@ export default function NuevaOrden() {
 
             <form onSubmit={handleSubmit} className="p-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
                 
-                {/* COLUMNA IZQUIERDA Y CENTRAL: DATOS (Ocupa 2 espacios) */}
                 <div className="lg:col-span-2 space-y-6">
                     <div className="bg-white border-2 border-hidratec-primary rounded-lg overflow-hidden">
                         <div className="bg-hidratec-primary text-hidratec-dark font-black text-center py-2">INFORMACIÓN GENERAL</div>
@@ -197,9 +197,7 @@ export default function NuevaOrden() {
                                 <select name="tecnico_responsable" value={formulario.tecnico_responsable} onChange={handleChange} className="w-full p-2 border rounded font-bold bg-gray-50">
                                     <option value="">-- SIN ASIGNAR --</option>
                                     {tecnicosBD.map(tecnico => (
-                                        <option key={tecnico._id} value={tecnico.nombre}>
-                                            {tecnico.nombre}
-                                        </option>
+                                        <option key={tecnico._id} value={tecnico.nombre}>{tecnico.nombre}</option>
                                     ))}
                                 </select>
                             </div>
@@ -221,26 +219,46 @@ export default function NuevaOrden() {
                     </div>
                 </div>
 
-                {/* COLUMNA DERECHA: EVIDENCIA FOTOGRÁFICA */}
+                {/* COLUMNA DERECHA: EVIDENCIA FOTOGRÁFICA (AQUÍ ESTÁ LA MAGIA) */}
                 <div className="space-y-6">
-                    <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg overflow-hidden flex flex-col items-center justify-center p-6 min-h-[300px] relative">
-                        {fotoPreview ? (
-                            <>
-                                <img src={fotoPreview} alt="Evidencia" className="w-full h-auto rounded shadow-md object-cover" />
-                                <button type="button" onClick={() => { setFotoPreview(null); setFotoArchivo(null); }} className="absolute top-4 right-4 bg-red-500 text-white p-2 rounded-full hover:bg-red-600 shadow-lg">
-                                    <X className="h-4 w-4" />
-                                </button>
-                            </>
+                    <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg p-6 min-h-[300px] flex flex-col justify-center">
+                        
+                        {previews.length > 0 ? (
+                            <div className="space-y-4">
+                                {/* Galería de fotos seleccionadas */}
+                                <div className="grid grid-cols-2 gap-3">
+                                    {previews.map((prev, index) => (
+                                        <div key={index} className="relative group">
+                                            <img src={prev} alt={`Evidencia ${index + 1}`} className="w-full h-24 object-cover rounded shadow border" />
+                                            <button type="button" onClick={() => eliminarFoto(index)} className="absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full shadow-lg hover:bg-red-600 transition">
+                                                <X className="h-4 w-4" />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                                
+                                {/* Botón para agregar más si no supera el límite de 20 */}
+                                {previews.length < 20 && (
+                                    <div className="text-center mt-4">
+                                        <label className="cursor-pointer inline-flex items-center gap-2 bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-bold hover:bg-gray-100 transition shadow-sm">
+                                            <UploadCloud className="h-4 w-4" /> Añadir más
+                                            <input type="file" multiple accept="image/*" className="hidden" onChange={handleCapturarFotos} />
+                                        </label>
+                                        <p className="text-xs text-gray-500 mt-2">{previews.length} de 20 fotos adjuntas</p>
+                                    </div>
+                                )}
+                            </div>
                         ) : (
                             <div className="text-center text-gray-400">
                                 <Camera className="h-16 w-16 mx-auto mb-2 opacity-50" />
                                 <p className="font-bold text-sm mb-4">Evidencia Fotográfica de Ingreso</p>
                                 
                                 <label className="cursor-pointer bg-hidratec-dark text-white px-4 py-2 rounded-lg font-bold hover:bg-black transition flex items-center justify-center gap-2">
-                                    <UploadCloud className="h-5 w-5" /> Subir o Tomar Foto
-                                    <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handleCapturarFoto} />
+                                    <UploadCloud className="h-5 w-5" /> Subir o Tomar Fotos
+                                    {/* IMPORTANTE: Se agregó la propiedad 'multiple' */}
+                                    <input type="file" multiple accept="image/*" className="hidden" onChange={handleCapturarFotos} />
                                 </label>
-                                <p className="text-xs mt-2 text-gray-400">Soporta cámara de celular o PC</p>
+                                <p className="text-xs mt-2 text-gray-400">Puedes seleccionar hasta 20 imágenes.</p>
                             </div>
                         )}
                     </div>
